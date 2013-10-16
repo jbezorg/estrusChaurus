@@ -29,6 +29,8 @@ function oviposition()
 	bool finished = false
 	float fReduction
 	float fBreastReduction
+	float fButtReduction
+
 	; make sure we have 3d loaded to access
 	while ( !kTarget.Is3DLoaded() )
 		Utility.Wait( 1.0 )
@@ -37,8 +39,9 @@ function oviposition()
 		GoToState("AFTERMATH")
 	endIf
 
-	fReduction = eggChain()
+	fReduction       = eggChain()
 	fBreastReduction = fReduction / 2.0
+	fButtReduction   = fReduction / 2.0
 
 	if ( bBellyEnabled )
 		fPregBelly = fPregBelly - fReduction
@@ -54,6 +57,32 @@ function oviposition()
 			NetImmerse.SetNodeScale( kTarget, NINODE_BELLY, fPregBelly, true)
 		endif
 	endif
+	
+	; BUTT SWELL ======================================================
+	if ( bButtEnabled )
+		fPregLeftButt  = fPregLeftButt  - fButtReduction
+		fPregRightButt = fPregRightButt - fButtReduction
+
+		if ( fPregLeftButt < fOrigLeftButt )
+			fPregLeftButt = fOrigLeftButt
+		endif
+		if ( fPregRightButt < fOrigRightButt )
+			fPregRightButt = fOrigRightButt
+		endif
+		
+		if ( !bBellyEnabled && !bBreastEnabled )
+			finished = ( fPregRightButt == fOrigRightButt || fPregLeftButt == fOrigLeftButt )
+		endIF
+
+		NetImmerse.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fPregLeftButt, false)
+		NetImmerse.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fPregRightButt, false)
+		if ( kTarget == kPlayer )
+			NetImmerse.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fPregLeftButt, true)
+			NetImmerse.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fPregRightButt, true)
+		endif
+	endif
+
+	
 
 	if ( bBreastEnabled )
 		fPregLeftBreast    = fPregLeftBreast - fBreastReduction
@@ -78,7 +107,7 @@ function oviposition()
 			endif
 		endif
 		
-		if ( !bBellyEnabled )
+		if ( !bBellyEnabled && !bButtEnabled )
 			finished = ( fPregRightBreast == fOrigRightBreast || fPregLeftBreast == fOrigLeftBreast )
 		endIF
 
@@ -151,8 +180,8 @@ state IMPREGNATE
 		endIf
 
 		if ( !kTarget.IsInFaction( SexLabAnimatingFaction ) )
-			; both will be false if bDisableNodeChange is true
-			if ( bBellyEnabled || bBreastEnabled )
+			; all will be false if bDisableNodeChange is true
+			if ( bBellyEnabled || bBreastEnabled || bButtEnabled )
 				GoToState("INCUBATION_NODE")
 			Else
 				GoToState("INCUBATION")
@@ -277,6 +306,7 @@ state INCUBATION_NODE
 					fInfectionLastMsg = fGameTime + Utility.RandomFloat(0.0417, 0.25)
 					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 				endif
+
 				if ( fPregBelly > NINODE_MAX_SCALE * 2.0 )
 					fPregBelly = NINODE_MAX_SCALE * 2.0 
 				endif
@@ -295,6 +325,49 @@ state INCUBATION_NODE
 				NetImmerse.SetNodeScale( kTarget, NINODE_BELLY, fPregBelly, false)
 				if ( kTarget == kPlayer )
 					NetImmerse.SetNodeScale( kTarget, NINODE_BELLY, fPregBelly, true)
+				endif
+			endif
+
+			; BUTT SWELL ======================================================
+			iButtSwellGlobal = zzEstrusSwellingBelly.GetValueInt()
+			if ( bButtEnabled && iButtSwellGlobal )
+				fButtSwell     = fInfectionSwell / iButtSwellGlobal
+				fPregLeftButt  = fOrigLeftButt  + fButtSwell
+				fPregRightButt = fOrigRightButt + fButtSwell
+
+				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
+					fInfectionLastMsg = fGameTime + Utility.RandomFloat(0.0417, 0.25)
+					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
+				endif
+
+				if ( fPregLeftButt > NINODE_MAX_SCALE )
+					fPregLeftButt = NINODE_MAX_SCALE 
+				endif
+				if ( fPregRightButt > NINODE_MAX_SCALE )
+					fPregRightButt = NINODE_MAX_SCALE 
+				endif
+				if ( fPregLeftButt > zzEstrusChaurusMaxButtScale.GetValue() )
+					fPregLeftButt = zzEstrusChaurusMaxButtScale.GetValue()
+				endif
+				if ( fPregRightButt > zzEstrusChaurusMaxButtScale.GetValue() )
+					fPregRightButt = zzEstrusChaurusMaxButtScale.GetValue()
+				endif
+
+				NetImmerse.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fPregLeftButt, false)
+				NetImmerse.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fPregRightButt, false)
+				if ( kTarget == kPlayer )
+					NetImmerse.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fPregLeftButt, true)
+					NetImmerse.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fPregRightButt, true)
+				endif
+			elseIf ( bButtEnabled && ( fPregLeftButt != fOrigLeftButt || fPregRightButt != fOrigRightButt ) )
+				fPregLeftButt = fOrigLeftButt
+				fPregRightButt = fOrigRightButt
+
+				NetImmerse.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fPregLeftButt, false)
+				NetImmerse.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fPregRightButt, false)
+				if ( kTarget == kPlayer )
+					NetImmerse.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fPregLeftButt, true)
+					NetImmerse.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fPregRightButt, true)
 				endif
 			endif
 
@@ -404,7 +477,6 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 
 	;kCaster.PathToReference(kTarget, 1.0)
 	
-
 	if ( !kTarget.IsInFaction(zzEstrusChaurusBreederFaction) )
 		kTarget.AddToFaction(zzEstrusChaurusBreederFaction)
 	endIf
@@ -439,17 +511,25 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 
 		bEnableLeftBreast  = NetImmerse.HasNode(kTarget, NINODE_LEFT_BREAST, false)
 		bEnableRightBreast = NetImmerse.HasNode(kTarget, NINODE_RIGHT_BREAST, false)
+		bEnableLeftButt    = NetImmerse.HasNode(kTarget, NINODE_LEFT_BUTT, false)
+		bEnableRightButt   = NetImmerse.HasNode(kTarget, NINODE_RIGHT_BUTT, false)
 		bEnableBelly       = NetImmerse.HasNode(kTarget, NINODE_BELLY, false)
+
 		bBreastEnabled     = ( bEnableLeftBreast && bEnableRightBreast && zzEstrusSwellingBreasts.GetValueInt() as bool )
+		bButtEnabled       = ( bEnableLeftButt && bEnableRightButt && zzEstrusSwellingButt.GetValueInt() as bool )
 		bBellyEnabled      = ( bEnableBelly && zzEstrusSwellingBelly.GetValueInt() as bool )
 
 		if ( bBreastEnabled && kTarget.GetLeveledActorBase().GetSex() == 1 )
-			fOrigLeftBreast    = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BREAST, false)
-			fOrigRightBreast   = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BREAST, false)
+			fOrigLeftBreast  = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BREAST, false)
+			fOrigRightBreast = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BREAST, false)
 			if bTorpedoFixEnabled
 				fOrigLeftBreast01  = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BREAST01, false)
 				fOrigRightBreast01 = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BREAST01, false)
 			endif
+		endif
+		if ( bButtEnabled )
+			fOrigLeftButt    = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BUTT, false)
+			fOrigRightButt   = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BUTT, false)
 		endif
 		if ( bBellyEnabled )
 			fOrigBelly       = NetImmerse.GetNodeScale(kTarget, NINODE_BELLY, false)
@@ -502,6 +582,15 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 			endif
 		endif
 
+		if ( bButtEnabled )
+			NetImmerse.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fOrigLeftButt, false)
+			NetImmerse.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fOrigRightButt, false)
+			if ( kTarget == kPlayer )
+				NetImmerse.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fOrigLeftButt, true)
+				NetImmerse.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fOrigRightButt, true)
+			endif
+		endif
+
 		if ( bBreastEnabled )
 			NetImmerse.SetNodeScale( kTarget, NINODE_LEFT_BREAST, fOrigLeftBreast, false)
 			NetImmerse.SetNodeScale( kTarget, NINODE_RIGHT_BREAST, fOrigRightBreast, false)
@@ -528,10 +617,13 @@ Actor kPlayer            = None
 Bool  bDisableNodeChange = False
 Bool  bEnableLeftBreast  = False
 Bool  bEnableRightBreast = False
+Bool  bEnableLeftButt    = False
+Bool  bEnableRightButt   = False
 Bool  bEnableBelly       = False
 Bool  bEnableSkirt02     = False
 Bool  bEnableSkirt03     = False
 Bool  bBreastEnabled     = False
+Bool  bButtEnabled       = False
 Bool  bBellyEnabled      = False
 Bool  bUninstall         = False
 Bool  bIsFemale          = False
@@ -540,10 +632,14 @@ Float fOrigLeftBreast    = 1.0
 Float fPregLeftBreast    = 1.0
 Float fOrigLeftBreast01  = 1.0
 Float fPregLeftBreast01  = 1.0
+Float fOrigLeftButt      = 1.0
+Float fPregLeftButt      = 1.0
 Float fOrigRightBreast   = 1.0
 Float fPregRightBreast   = 1.0
 Float fOrigRightBreast01 = 1.0
 Float fPregRightBreast01 = 1.0
+Float fOrigRightButt     = 1.0
+Float fPregRightButt     = 1.0
 Float fOrigBelly         = 1.0
 Float fPregBelly         = 1.0
 Float fInfectionStart    = 0.0
@@ -551,6 +647,8 @@ Float fInfectionSwell    = 0.0
 Float fInfectionLastMsg  = 0.0
 Float fBreastSwell       = 0.0
 Int   iBreastSwellGlobal = 0
+Float fButtSwell         = 0.0
+Int   iButtSwellGlobal   = 0
 Float fBellySwell        = 0.0
 Int   iBellySwellGlobal  = 0
 Float fUpdateTime        = 5.0
@@ -580,10 +678,12 @@ GlobalVariable           Property zzEstrusDisableNodeResize  Auto
 GlobalVariable           Property zzEstrusIncubationPeriod  Auto
 GlobalVariable           Property zzEstrusSwellingBreasts  Auto
 GlobalVariable           Property zzEstrusSwellingBelly  Auto
+GlobalVariable           Property zzEstrusSwellingButt  Auto
 GlobalVariable           Property zzEstrusChaurusUninstall  Auto
 GlobalVariable           Property zzEstrusChaurusInfected  Auto
 GlobalVariable           Property zzEstrusChaurusMaxBreastScale  Auto  
 GlobalVariable           Property zzEstrusChaurusMaxBellyScale  Auto
+GlobalVariable           Property zzEstrusChaurusMaxButtScale  Auto
 GlobalVariable           Property zzEstrusChaurusTorpedoFix  Auto  
 Ingredient               Property ChaurusEggs  Auto
 Spell                    Property zzEstrusChaurusBreederAbility  Auto
@@ -593,8 +693,10 @@ Float                    Property fIncubationTime  Auto
 
 String                   Property NINODE_LEFT_BREAST    = "NPC L Breast" AutoReadOnly
 String                   Property NINODE_LEFT_BREAST01  = "NPC L Breast01" AutoReadOnly
+String                   Property NINODE_LEFT_BUTT      = "NPC L Butt" AutoReadOnly
 String                   Property NINODE_RIGHT_BREAST   = "NPC R Breast" AutoReadOnly
 String                   Property NINODE_RIGHT_BREAST01 = "NPC R Breast01" AutoReadOnly
+String                   Property NINODE_RIGHT_BUTT     = "NPC R Butt" AutoReadOnly
 String                   Property NINODE_SKIRT02        = "SkirtBBone02" AutoReadOnly
 String                   Property NINODE_SKIRT03        = "SkirtBBone03" AutoReadOnly
 String                   Property NINODE_BELLY          = "NPC Belly" AutoReadOnly
