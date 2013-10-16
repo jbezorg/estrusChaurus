@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set  base=sanguinesCorruption_
+set  base=EstrusChaurus_
 
 set  arrayline[0]=CHINESE.txt
 set  arrayline[1]=CZECH.txt

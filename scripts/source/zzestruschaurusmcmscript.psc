@@ -3,7 +3,7 @@ Scriptname zzEstrusChaurusMCMScript extends SKI_ConfigBase  Conditional
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 
 int function GetVersion()
-	return 3003
+	return 3100
 endFunction
 
 string function GetStringVer()
@@ -206,6 +206,11 @@ event OnVersionUpdate(int a_version)
 		Pages[5] = "$EC_PAGE_5"
 		Pages[6] = "$EC_PAGE_6"
 	endIf
+
+	if (a_version >= 3100 && CurrentVersion < 3100)
+		zzEstrusSwellingButt        = Game.GetFormFromFile(0x00037293, "EstrusChaurus.esp") as GlobalVariable
+		zzEstrusChaurusMaxButtScale = Game.GetFormFromFile(0x00037294, "EstrusChaurus.esp") as GlobalVariable
+	endIf
 endEvent
 
 ; MENUS -------------------------------------------------------------------------------------------
@@ -248,14 +253,25 @@ event OnPageReset(string a_page)
 	bFluidsEnabled     = zzEstrusChaurusFluids.GetValue() as bool
 
 ; NODE TESTS --------------------------------------------------------------------------------------
-	bEnableLeftBreast  = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST, false)
-	bEnableRightBreast = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST, false)
-	bEnableBelly       = NetImmerse.HasNode(kPlayer, NINODE_BELLY, false)
-	bEnableSkirt02     = NetImmerse.HasNode(kPlayer, NINODE_SKIRT02, false)
+	bEnableLeftBreast    = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST, false)
+	bEnableLeftBreast01  = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST01, false)
+	bEnableRightBreast   = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST, false)
+	bEnableRightBreast01 = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST01, false)
+	bEnableLeftButt      = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BUTT, false)
+	bEnableRightButt     = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BUTT, false)
+	bEnableBelly         = NetImmerse.HasNode(kPlayer, NINODE_BELLY, false)
+	bEnableSkirt02       = NetImmerse.HasNode(kPlayer, NINODE_SKIRT02, false)
 
 	if ( !bEnableLeftBreast || !bEnableRightBreast )
 		zzEstrusSwellingBreasts.SetValueInt( 0 )
+		zzEstrusChaurusTorpedoFix.SetValueInt( 0 )
 	endIf
+	if ( !bEnableLeftBreast01 || !bEnableRightBreast01 )
+		zzEstrusChaurusTorpedoFix.SetValueInt( 0 )
+	endIf
+	if ( !bEnableLeftButt || !bEnableRightButt )
+		zzEstrusSwellingButt.SetValueInt( 0 )
+	endIf	
 	if ( !bEnableBelly )
 		zzEstrusSwellingBelly.SetValueInt( 0 )
 	endIf
@@ -273,6 +289,7 @@ event OnPageReset(string a_page)
 	bSwellingEnabled   = !zzEstrusDisableNodeResize.GetValueInt() as bool
 	breastSwellingIdx  = zzEstrusSwellingBreasts.GetValueInt()
 	bellySwellingIdx   = zzEstrusSwellingBelly.GetValueInt()
+	buttSwellingIdx    = zzEstrusSwellingButt.GetValueInt()
 	bTorpedoFixEnabled = zzEstrusChaurusTorpedoFix.GetValueInt() as Bool
 
 ; GENERAL -----------------------------------------------------------------------------------------
@@ -344,6 +361,11 @@ event OnPageReset(string a_page)
 				else
 					AddToggleOptionST("STATE_BREAST_SCALING", "$EC_BREAST_SCALING", bTorpedoFixEnabled, OPTION_FLAG_DISABLED)
 					AddTextOptionST("STATE_BREAST_GROWTH", "$EC_BREAST_GROWTH", swellingSliderList[0], OPTION_FLAG_DISABLED)
+				endIf
+				if bEnableLeftButt && bEnableRightButt
+					AddTextOptionST("STATE_BUTT_GROWTH", "$EC_BUTT_GROWTH", swellingSliderList[buttSwellingIdx], iOptionFlag)
+				else
+					AddTextOptionST("STATE_BUTT_GROWTH", "$EC_BUTT_GROWTH", swellingSliderList[0], OPTION_FLAG_DISABLED)
 				endIf
 				if bEnableBelly
 					AddTextOptionST("STATE_BELLY_GROWTH", "$EC_BELLY_GROWTH", swellingSliderList[bellySwellingIdx], iOptionFlag)
@@ -426,17 +448,27 @@ event OnPageReset(string a_page)
 	elseIf ( a_page == Pages[5] )
 		SetCursorFillMode(TOP_TO_BOTTOM)
 		AddToggleOption("$EC_NINODE_LEFT_BREAST", bEnableLeftBreast, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_LEFT_BREAST01", bEnableLeftBreast01, OPTION_FLAG_DISABLED)
 		AddToggleOption("$EC_NINODE_RIGHT_BREAST", bEnableRightBreast, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_RIGHT_BREAST01", bEnableRightBreast01, OPTION_FLAG_DISABLED)
 		AddSliderOptionST("STATE_NINODE_BREAST_SCALE", "$EC_NINODE_MAX_BREAST_SCALE", zzEstrusChaurusMaxBreastScale.GetValue(), "{1}", iOptionFlag)
 		AddToggleOption("$EC_NINODE_SKIRT02", bEnableBelly, OPTION_FLAG_DISABLED)
 		AddToggleOption("$EC_NINODE_BELLY", bEnableSkirt02, OPTION_FLAG_DISABLED)
 		AddSliderOptionST("STATE_NINODE_BELLY_SCALE", "$EC_NINODE_MAX_BELLY_SCALE", zzEstrusChaurusMaxBellyScale.GetValue(), "{1}", iOptionFlag)
+		AddToggleOption("$EC_NINODE_LEFT_BUTT", bEnableLeftButt, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_RIGHT_BUTT", bEnableRightButt, OPTION_FLAG_DISABLED)
+		AddSliderOptionST("STATE_NINODE_BUTT_SCALE", "$EC_NINODE_MAX_BUTT_SCALE", zzEstrusChaurusMaxButtScale.GetValue(), "{1}", iOptionFlag)
 		SetCursorPosition(1)
 		AddTextOptionST("STATE_NINODE_0", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 		AddTextOptionST("STATE_NINODE_1", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
-		SetCursorPosition(7)
 		AddTextOptionST("STATE_NINODE_2", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 		AddTextOptionST("STATE_NINODE_3", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
+		SetCursorPosition(11)
+		AddTextOptionST("STATE_NINODE_4", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
+		AddTextOptionST("STATE_NINODE_5", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
+		SetCursorPosition(17)
+		AddTextOptionST("STATE_NINODE_6", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
+		AddTextOptionST("STATE_NINODE_7", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 ; VERSION CHECK -----------------------------------------------------------------------------------
 	elseIf ( a_page == Pages[6] )
 		AddHeaderOption("Estrus Chaurus v" + GetStringVer())
@@ -621,6 +653,24 @@ state STATE_BREAST_SCALING ; TOGGLE
 		SetInfoText("$EC_BREAST_SCALING_INFO")
 	endEvent
 endState
+state STATE_BUTT_GROWTH ; TEXT
+	event OnSelectST()
+		buttSwellingIdx += 1
+		buttSwellingIdx = buttSwellingIdx % swellingSliderList.length
+		zzEstrusSwellingButt.SetValueInt( buttSwellingIdx )
+		SetTextOptionValueST( swellingSliderList[buttSwellingIdx] )
+	endEvent
+
+	event OnDefaultST()
+		buttSwellingIdx = 1
+		zzEstrusSwellingButt.SetValueInt( 1 )
+		SetTextOptionValueST( swellingSliderList[1] )
+	endEvent
+
+	event OnHighlightST()
+		SetInfoText("$EC_BUTT_GROWTH_INFO")
+	endEvent
+endState
 
 ; AFTEREFFECTS ------------------------------------------------------------------------------------
 state STATE_INFESTATION ; TOGGLE
@@ -652,12 +702,32 @@ state STATE_NINODE_1 ; TEXT
 endState
 state STATE_NINODE_2 ; TEXT
 	event OnHighlightST()
-		SetInfoText("$EC_NINODE_SKIRT02_INFO")
+		SetInfoText("$EC_NINODE_LEFT_BREAST01_INFO")
 	endEvent
 endState
 state STATE_NINODE_3 ; TEXT
 	event OnHighlightST()
+		SetInfoText("$EC_NINODE_RIGHT_BREAST01_INFO")
+	endEvent
+endState
+state STATE_NINODE_4 ; TEXT
+	event OnHighlightST()
+		SetInfoText("$EC_NINODE_SKIRT02_INFO")
+	endEvent
+endState
+state STATE_NINODE_5 ; TEXT
+	event OnHighlightST()
 		SetInfoText("$EC_NINODE_BELLY_INFO")
+	endEvent
+endState
+state STATE_NINODE_6 ; TEXT
+	event OnHighlightST()
+		SetInfoText("$EC_NINODE_LEFT_BUTT_INFO")
+	endEvent
+endState
+state STATE_NINODE_7 ; TEXT
+	event OnHighlightST()
+		SetInfoText("$EC_NINODE_RIGHT_BUTT_INFO")
 	endEvent
 endState
 
@@ -826,13 +896,16 @@ Float[]             Property fHatchingDue                   Auto
 ObjectReference[]   Property kHatchingEgg                   Auto
 Actor[]             Property kIncubationOff                 Auto
 
-
-String              Property NINODE_LEFT_BREAST  = "NPC L Breast" AutoReadOnly
-String              Property NINODE_RIGHT_BREAST = "NPC R Breast" AutoReadOnly
-String              Property NINODE_SKIRT02      = "SkirtBBone02" AutoReadOnly
-String              Property NINODE_BELLY        = "NPC Belly" AutoReadOnly
-Float               Property NINODE_MAX_SCALE    = 3.0 AutoReadOnly
-Float               Property NINODE_MIN_SCALE    = 0.1 AutoReadOnly
+String              Property NINODE_LEFT_BREAST    = "NPC L Breast" AutoReadOnly
+String              Property NINODE_LEFT_BREAST01  = "NPC L Breast01" AutoReadOnly
+String              Property NINODE_LEFT_BUTT      = "NPC L Butt" AutoReadOnly
+String              Property NINODE_RIGHT_BREAST   = "NPC R Breast" AutoReadOnly
+String              Property NINODE_RIGHT_BREAST01 = "NPC R Breast01" AutoReadOnly
+String              Property NINODE_RIGHT_BUTT     = "NPC R Butt" AutoReadOnly
+String              Property NINODE_SKIRT02        = "SkirtBBone02" AutoReadOnly
+String              Property NINODE_BELLY          = "NPC Belly" AutoReadOnly
+Float               Property NINODE_MAX_SCALE      = 3.0 AutoReadOnly
+Float               Property NINODE_MIN_SCALE      = 0.1 AutoReadOnly
 
 ; VERSION 10
 _ae_framework       Property ae                    Auto
@@ -859,6 +932,11 @@ Bool                Property bRegisterCompanions   Auto  Hidden
 ; VERSION 3003
 Keyword             Property kwDeviousDevices      Auto  Hidden
 Faction             Property kfSLAExposure         Auto  Hidden
+
+; VERSION 3100
+GlobalVariable      Property zzEstrusSwellingButt         Auto
+GlobalVariable      Property zzEstrusChaurusMaxButtScale  Auto
+
 
 ; PRIVATE VARIABLES -------------------------------------------------------------------------------
 ; VERSION 1
@@ -915,5 +993,13 @@ Bool bFluidsEnabled        = True
 String[] sTentacleAnims
 Bool[] bTentacleAnims
 
+
 ; VERSION 3001
-Bool bRegisterAnimations = False
+Bool bRegisterAnimations   = False
+
+; VERSION 3100
+Int  buttSwellingIdx       = 0
+Bool bEnableLeftButt       = False
+Bool bEnableRightButt      = False
+Bool  bEnableLeftBreast01  = False
+Bool  bEnableRightBreast01 = False
