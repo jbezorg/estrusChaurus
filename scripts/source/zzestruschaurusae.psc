@@ -40,7 +40,7 @@ Bool function qualifyActor(Actor akActor = none, String asStat = "")
 		return false
 	endIf
 
-	Bool bDeviousBelt = mcm.kwDeviousDevices && akActor.WornHasKeyword(mcm.kwDeviousDevices)
+	Bool bDeviousBelt = mcm.kwDeviousDevices != none && akActor.WornHasKeyword(mcm.kwDeviousDevices)
 
 	if asStat == ae.HEALTH && !ae.isRagdolling(akActor) && !akActor.IsInFaction(SexLabAnimating) && !bDeviousBelt
 		int idx       = crChaurusPoison.Length

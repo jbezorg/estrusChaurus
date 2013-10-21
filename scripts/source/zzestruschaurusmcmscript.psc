@@ -3,7 +3,7 @@ Scriptname zzEstrusChaurusMCMScript extends SKI_ConfigBase  Conditional
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 
 int function GetVersion()
-	return 3100
+	return 3110
 endFunction
 
 string function GetStringVer()
@@ -766,6 +766,24 @@ state STATE_NINODE_BELLY_SCALE ; SLIDER
 	event OnDefaultST()
 		zzEstrusChaurusMaxBellyScale.SetValue( NINODE_MAX_SCALE )
 		SetSliderOptionValueST( NINODE_MAX_SCALE, "{1}" )
+	endEvent
+endState
+state STATE_NINODE_BUTT_SCALE; SLIDER
+	event OnSliderOpenST()
+		SetSliderDialogStartValue( zzEstrusChaurusMaxButtScale.GetValue() )
+		SetSliderDialogDefaultValue( 2.0 )
+		SetSliderDialogRange( NINODE_MIN_SCALE, NINODE_MAX_SCALE )
+		SetSliderDialogInterval( 0.1 )
+	endEvent
+
+	event OnSliderAcceptST(float value)
+		zzEstrusChaurusMaxButtScale.SetValue( value )
+		SetSliderOptionValueST( value, "{1}")
+	endEvent
+
+	event OnDefaultST()
+		zzEstrusChaurusMaxButtScale.SetValue( 2.0 )
+		SetSliderOptionValueST( 2.0, "{1}" )
 	endEvent
 endState
 
