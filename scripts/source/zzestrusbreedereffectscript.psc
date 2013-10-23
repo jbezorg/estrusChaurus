@@ -5,7 +5,7 @@ Float function eggChain()
 	ObjectReference[] thisEgg = new ObjectReference[13]
 
 	thisThing.moveToNode(kTarget, NINODE_SKIRT02)
-	thisThing.MoveTo(thisThing, 3.0 * Math.Sin(thisThing.GetAngleZ()), 3.0 * Math.Cos(thisThing.GetAngleZ()), afZOffset = -3.0)
+	thisThing.MoveTo(thisThing, 3.0 * Math.Sin(thisThing.GetAngleZ()), 3.0 * Math.Cos(thisThing.GetAngleZ()), afZOffset = 3.0)
 
 	Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 	Int idx = 0
@@ -371,6 +371,10 @@ state INCUBATION_NODE
 				endif
 			endif
 
+			if !kTarget.IsOnMount() && ( ( bBreastEnabled && iBreastSwellGlobal ) || ( bBellyEnabled && iBellySwellGlobal ) || ( bButtEnabled && iButtSwellGlobal ) )
+				kTarget.QueueNiNodeUpdate()
+			endIf
+			
 			kTarget.SetFactionRank(zzEstrusChaurusBreederFaction, Math.Floor(fBellySwell + fBreastSwell) )
 			RegisterForSingleUpdate( fUpdateTime )
 		endif
