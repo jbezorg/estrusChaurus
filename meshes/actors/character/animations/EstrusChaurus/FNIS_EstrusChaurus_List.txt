@@ -1,2 +1,7 @@
 AnimVar ecBreastSwell REAL 0.0
 AnimVar ecBellySwell REAL 0.0
+
+'s -k,b1.0 zzEstrusBirth01 ..\SexLab\AggrMissionary_A1_S1.hkx
+'+ -k,b1.0 zzEstrusBirth02 ..\SexLab\AggrMissionary_A1_S2.hkx
+'+ -k,b1.0 zzEstrusBirth03 ..\SexLab\AggrMissionary_A1_S3.hkx
+'+ -k,b1.0 zzEstrusBirth04 ..\SexLab\AggrMissionary_A1_S4.hkx

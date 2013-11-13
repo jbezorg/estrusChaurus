@@ -25,6 +25,9 @@ zzEstrusChaurusMCMScript  property mcm                            auto
 ; VERSION 6
 Faction                   property CurrentHireling                auto
 
+; VERSION 8
+Armor                     property zzEstrusChaurusDwemerBinders   auto
+
 ; VERSION 1
 Actor[]            sexActors
 sslBaseAnimation[] animations
@@ -81,7 +84,7 @@ endFunction
 ; This functions exactly as and has the same purpose as the SkyUI function
 ; GetVersion(). It returns the static version of the AE script.
 int function aeGetVersion()
-	return 7
+	return 8
 endFunction
 
 function aeUpdate( int aiVersion )
@@ -116,6 +119,9 @@ function aeUpdate( int aiVersion )
 		endWhile
 
 		myActorsList[0] = Game.GetPlayer()
+	endIf
+	if (myVersion >= 8 && aiVersion < 8)
+		zzEstrusChaurusDwemerBinders = Game.GetFormFromFile(0x00039e74, "EstrusChaurus.esp") as Armor
 	endIf
 endFunction
 ; END AE VERSIONING ===========================================================
@@ -174,7 +180,7 @@ event OnECEvent(String asEventName, string asStat, float afStatValue, Form akSen
 	Debug.TraceConditional("EC::OnECEvent: " + asEventName, ae.VERBOSE)
 	Actor kSender = akSender as Actor
 
-	if asEventName == myEvent + ae._START && asStat == ae.HEALTH
+	if asEventName == myEvent + ae._START && asStat == ae.HEALTH && SexLab.ValidateActor(kSender) == 1
 		Int chaurusRape = 0
 		Actor kAttacker = ae.GetLastAttacker(kSender) as Actor
 		
@@ -240,6 +246,10 @@ event estrusChaurusStart(string eventName, string argString, float argNum, form 
 		actorList[0].AddItem(zzEstrusChaurusParasite, 1, true)
 		actorList[0].EquipItem(zzEstrusChaurusParasite, true, true)
 	endIf
+	if anim.name == "Dwemer Machine"
+		actorList[0].AddItem(zzEstrusChaurusDwemerBinders, 1, true)
+		actorList[0].EquipItem(zzEstrusChaurusDwemerBinders, true, true)
+	endIf
 	UnregisterForModEvent("AnimationStart_estrusChaurus")
 endEvent
 
@@ -264,7 +274,8 @@ event estrusChaurusStage(string eventName, string argString, float argNum, form 
 	sslBaseAnimation anim = SexLab.HookAnimation(argString)
 	actor[] actorList     = SexLab.HookActors(argString)
 	int stage             = SexLab.HookStage(argString)
-	int cnt               = actorList[0].GetItemCount(zzEstrusChaurusParasite)
+	int cntParasite       = actorList[0].GetItemCount(zzEstrusChaurusParasite)
+	int cntBinders        = actorList[0].GetItemCount(zzEstrusChaurusDwemerBinders)
 
 	actorList[0].RestoreActorValue(ae.HEALTH, 10000)
 	if stage >= 2
@@ -274,9 +285,13 @@ event estrusChaurusStage(string eventName, string argString, float argNum, form 
 		actorList[0].AddItem(zzEstrusChaurusFluid, 1, true)
 		actorList[0].EquipItem(zzEstrusChaurusFluid, true, true)
 	endIf
-	if cnt > 0 && stage == 8
+	if cntParasite > 0 && stage == 8
 		actorList[0].UnequipItem(zzEstrusChaurusParasite, false, true)
-		actorList[0].RemoveItem(zzEstrusChaurusParasite, cnt, true)
+		actorList[0].RemoveItem(zzEstrusChaurusParasite, cntParasite, true)
+	endIf
+	if cntBinders > 0 && stage == 9
+		actorList[0].UnequipItem(zzEstrusChaurusDwemerBinders, false, true)
+		actorList[0].RemoveItem(zzEstrusChaurusDwemerBinders, cntBinders, true)
 	endIf
 endEvent
 

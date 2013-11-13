@@ -3,7 +3,7 @@ Scriptname zzEstrusChaurusMCMScript extends SKI_ConfigBase  Conditional
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 
 int function GetVersion()
-	return 3110
+	return 3202
 endFunction
 
 string function GetStringVer()
@@ -116,13 +116,15 @@ event OnConfigInit()
 	Pages[4] = "$EC_PAGE_5"
 	Pages[4] = "$EC_PAGE_6"
 
-	sTentacleAnims = New String[2]
+	sTentacleAnims = New String[3]
 	sTentacleAnims[0] = "Tentacle Double"
 	sTentacleAnims[1] = "Tentacle Side"
+	sTentacleAnims[2] = "Dwemer Machine"
 
-	bTentacleAnims = New Bool[2]
+	bTentacleAnims = New Bool[3]
 	bTentacleAnims[0] = false
 	bTentacleAnims[1] = false
+	bTentacleAnims[2] = false
 
 	registerMenus()
 endEvent
@@ -211,6 +213,23 @@ event OnVersionUpdate(int a_version)
 		zzEstrusSwellingButt        = Game.GetFormFromFile(0x00037293, "EstrusChaurus.esp") as GlobalVariable
 		zzEstrusChaurusMaxButtScale = Game.GetFormFromFile(0x00037294, "EstrusChaurus.esp") as GlobalVariable
 	endIf
+
+	if (a_version >= 3200 && CurrentVersion < 3200)
+		sTentacleAnims = New String[3]
+		sTentacleAnims[0] = "Tentacle Double"
+		sTentacleAnims[1] = "Tentacle Side"
+		sTentacleAnims[2] = "Dwemer Machine"
+
+		bTentacleAnims = New Bool[3]
+		bTentacleAnims[0] = false
+		bTentacleAnims[1] = false
+		bTentacleAnims[2] = false
+	endIf
+	
+	if (a_version >= 3201 && CurrentVersion < 3201)
+		zzEstrusChaurusResidual      = Game.GetFormFromFile(0x00010a7a, "EstrusChaurus.esp") as GlobalVariable
+		zzEstrusChaurusResidualScale = Game.GetFormFromFile(0x0003da79, "EstrusChaurus.esp") as GlobalVariable
+	endIf
 endEvent
 
 ; MENUS -------------------------------------------------------------------------------------------
@@ -249,18 +268,19 @@ event OnPageReset(string a_page)
 		bTentacleAnims[iIndex] = SexLab.GetAnimationByName(sTentacleAnims[iIndex]) != none
 	endWhile
 
-	bAnimRegistered    = bTentacleAnims.Find(false) == -1
-	bFluidsEnabled     = zzEstrusChaurusFluids.GetValue() as bool
+	bAnimRegistered       = bTentacleAnims.Find(false) == -1
+	bFluidsEnabled        = zzEstrusChaurusFluids.GetValue() as bool
 
 ; NODE TESTS --------------------------------------------------------------------------------------
-	bEnableLeftBreast    = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST, false)
-	bEnableLeftBreast01  = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST01, false)
-	bEnableRightBreast   = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST, false)
-	bEnableRightBreast01 = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST01, false)
-	bEnableLeftButt      = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BUTT, false)
-	bEnableRightButt     = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BUTT, false)
-	bEnableBelly         = NetImmerse.HasNode(kPlayer, NINODE_BELLY, false)
-	bEnableSkirt02       = NetImmerse.HasNode(kPlayer, NINODE_SKIRT02, false)
+	bEnableResidualBreast = zzEstrusChaurusResidual.GetValue() as bool
+	bEnableLeftBreast     = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST, false)
+	bEnableLeftBreast01   = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST01, false)
+	bEnableRightBreast    = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST, false)
+	bEnableRightBreast01  = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST01, false)
+	bEnableLeftButt       = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BUTT, false)
+	bEnableRightButt      = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BUTT, false)
+	bEnableBelly          = NetImmerse.HasNode(kPlayer, NINODE_BELLY, false)
+	bEnableSkirt02        = NetImmerse.HasNode(kPlayer, NINODE_SKIRT02, false)
 
 	if ( !bEnableLeftBreast || !bEnableRightBreast )
 		zzEstrusSwellingBreasts.SetValueInt( 0 )
@@ -310,6 +330,7 @@ event OnPageReset(string a_page)
 		SetCursorPosition(1)
 		AddHeaderOption("$EC_STATUS")
 		AddToggleOptionST("STATE_UNINSTALL", "$EC_UNINSTALL", bUninstallState, iOptionFlag)
+		AddToggleOptionST("STATE_FORCE_FIX", "$EC_FORCEFIX_NODES", false, iOptionFlag)
 		AddTextOption("$EC_INFECTED", zzEstrusChaurusInfected.GetValueInt(), OPTION_FLAG_DISABLED)
 
 ; INFECTED ACTIVE ---------------------------------------------------------------------------------
@@ -447,6 +468,8 @@ event OnPageReset(string a_page)
 ; NODE TESTS --------------------------------------------------------------------------------------
 	elseIf ( a_page == Pages[5] )
 		SetCursorFillMode(TOP_TO_BOTTOM)
+		AddToggleOptionST("STATE_RESIDUAL_BREAST_TOGGLE", "$EC_RESIDUAL_BREAST", bEnableResidualBreast, iOptionFlag)
+		
 		AddToggleOption("$EC_NINODE_LEFT_BREAST", bEnableLeftBreast, OPTION_FLAG_DISABLED)
 		AddToggleOption("$EC_NINODE_LEFT_BREAST01", bEnableLeftBreast01, OPTION_FLAG_DISABLED)
 		AddToggleOption("$EC_NINODE_RIGHT_BREAST", bEnableRightBreast, OPTION_FLAG_DISABLED)
@@ -458,15 +481,17 @@ event OnPageReset(string a_page)
 		AddToggleOption("$EC_NINODE_LEFT_BUTT", bEnableLeftButt, OPTION_FLAG_DISABLED)
 		AddToggleOption("$EC_NINODE_RIGHT_BUTT", bEnableRightButt, OPTION_FLAG_DISABLED)
 		AddSliderOptionST("STATE_NINODE_BUTT_SCALE", "$EC_NINODE_MAX_BUTT_SCALE", zzEstrusChaurusMaxButtScale.GetValue(), "{1}", iOptionFlag)
+
 		SetCursorPosition(1)
+		AddSliderOptionST("STATE_RESIDUAL_BREAST_SCALE", "$EC_RESIDUAL_BREAST_MULT", zzEstrusChaurusResidualScale.GetValue(), "{1}", iOptionFlag)
 		AddTextOptionST("STATE_NINODE_0", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 		AddTextOptionST("STATE_NINODE_1", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 		AddTextOptionST("STATE_NINODE_2", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 		AddTextOptionST("STATE_NINODE_3", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
-		SetCursorPosition(11)
+		SetCursorPosition(13)
 		AddTextOptionST("STATE_NINODE_4", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 		AddTextOptionST("STATE_NINODE_5", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
-		SetCursorPosition(17)
+		SetCursorPosition(19)
 		AddTextOptionST("STATE_NINODE_6", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 		AddTextOptionST("STATE_NINODE_7", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 ; VERSION CHECK -----------------------------------------------------------------------------------
@@ -505,6 +530,51 @@ state STATE_UNINSTALL
 
 	event OnHighlightST()
 		SetInfoText("$EC_UNINSTALL_INFO")
+	endEvent
+endState
+state STATE_FORCE_FIX
+	event OnSelectST()
+		while ( Utility.IsInMenuMode() )
+			Utility.Wait( 2.0 )
+		endWhile
+
+		int idx1
+		int idx2
+
+		string[] nodes = new string[8]
+		nodes[0] = "NPC L Breast"
+		nodes[1] = "NPC L Breast01"
+		nodes[2] = "NPC L Butt"
+		nodes[3] = "NPC R Breast"
+		nodes[4] = "NPC R Breast01"
+		nodes[5] = "NPC R Butt"
+		nodes[6] = "SkirtBBone02"
+		nodes[7] = "NPC Belly"
+		
+		idx1 = me.myActorsList.length
+		while idx1 > 0
+			idx1 -= 1
+
+			idx2 = nodes.length
+			While idx2 > 0
+				idx2 -= 1
+				
+				NetImmerse.SetNodeScale( me.myActorsList[idx1], nodes[idx2], 1.0, false)
+				if ( idx1 == 0 )
+					NetImmerse.SetNodeScale( me.myActorsList[idx1], nodes[idx2], 1.0, true)
+				endIf
+			endWhile
+
+			me.myActorsList[idx1].QueueNiNodeUpdate()
+		endWhile
+	endEvent
+
+	event OnDefaultST()
+		SetToggleOptionValueST( false )
+	endEvent
+
+	event OnHighlightST()
+		SetInfoText("$EC_FORCEFIX_NODES_INFO")
 	endEvent
 endState
 state STATE_INFECTED
@@ -690,6 +760,43 @@ state STATE_INFESTATION ; TOGGLE
 endState
 
 ; NODE TESTS --------------------------------------------------------------------------------------
+state STATE_RESIDUAL_BREAST_TOGGLE ; TOGGLE
+	event OnSelectST()
+		zzEstrusChaurusResidual.SetValueInt( Math.LogicalXor( 1, zzEstrusChaurusResidual.GetValueInt() ) )
+		SetToggleOptionValueST( zzEstrusChaurusResidual.GetValueInt() as Bool )
+	endEvent
+
+	event OnDefaultST()
+		zzEstrusChaurusResidual.SetValueInt( 0 )
+		SetToggleOptionValueST( false )
+	endEvent
+
+	event OnHighlightST()
+		SetInfoText("$EC_RESIDUAL_BREAST_INFO")
+	endEvent
+endState
+state STATE_RESIDUAL_BREAST_SCALE ; SLIDER
+	event OnSliderOpenST()
+		SetSliderDialogStartValue( zzEstrusChaurusResidualScale.GetValue() )
+		SetSliderDialogDefaultValue( RESIDUAL_MULT_DEFAULT )
+		SetSliderDialogRange( NINODE_MIN_SCALE, NINODE_MAX_SCALE )
+		SetSliderDialogInterval( 0.1 )
+	endEvent
+
+	event OnSliderAcceptST(float value)
+		zzEstrusChaurusResidualScale.SetValue( value )
+		SetSliderOptionValueST( value, "{1}")
+	endEvent
+
+	event OnDefaultST()
+		zzEstrusChaurusResidualScale.SetValue( RESIDUAL_MULT_DEFAULT )
+		SetSliderOptionValueST( RESIDUAL_MULT_DEFAULT )
+	endEvent
+
+	event OnHighlightST()
+		SetInfoText("$EC_RESIDUAL_BREAST_MULT_INFO")
+	endEvent
+endState
 state STATE_NINODE_0 ; TEXT
 	event OnHighlightST()
 		SetInfoText("$EC_NINODE_LEFT_BREAST_INFO")
@@ -924,6 +1031,7 @@ String              Property NINODE_SKIRT02        = "SkirtBBone02" AutoReadOnly
 String              Property NINODE_BELLY          = "NPC Belly" AutoReadOnly
 Float               Property NINODE_MAX_SCALE      = 3.0 AutoReadOnly
 Float               Property NINODE_MIN_SCALE      = 0.1 AutoReadOnly
+Float               Property RESIDUAL_MULT_DEFAULT = 1.2 AutoReadOnly
 
 ; VERSION 10
 _ae_framework       Property ae                    Auto
@@ -954,6 +1062,10 @@ Faction             Property kfSLAExposure         Auto  Hidden
 ; VERSION 3100
 GlobalVariable      Property zzEstrusSwellingButt         Auto
 GlobalVariable      Property zzEstrusChaurusMaxButtScale  Auto
+
+; VERSION 3202
+GlobalVariable      Property zzEstrusChaurusResidual      Auto
+GlobalVariable      Property zzEstrusChaurusResidualScale Auto
 
 
 ; PRIVATE VARIABLES -------------------------------------------------------------------------------
@@ -1019,5 +1131,8 @@ Bool bRegisterAnimations   = False
 Int  buttSwellingIdx       = 0
 Bool bEnableLeftButt       = False
 Bool bEnableRightButt      = False
-Bool  bEnableLeftBreast01  = False
-Bool  bEnableRightBreast01 = False
+Bool bEnableLeftBreast01   = False
+Bool bEnableRightBreast01  = False
+
+; VERSION 3201
+Bool bEnableResidualBreast = False
