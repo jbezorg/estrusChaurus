@@ -16,6 +16,7 @@ set  arrayline[8]=SPANISH.txt
 
 ::read it using a FOR /L statement
 for /l %%n in (0,1,8) do (
+  echo copy %base%ENGLISH.txt to %base%!arrayline[%%n]!
   copy %base%ENGLISH.txt %base%!arrayline[%%n]!
 )
 pause
