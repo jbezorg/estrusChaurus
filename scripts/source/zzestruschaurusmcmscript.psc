@@ -243,12 +243,15 @@ event OnVersionUpdate(int a_version)
 		sGenderRestriction[0] = "$EC_MALE"
 		sGenderRestriction[1] = "$EC_FEMALE"
 		sGenderRestriction[2] = "$EC_BOTH"
+<<<<<<< HEAD
 		
 		swellingSliderList = new string[4]
 		swellingSliderList[0] = "$EC_NONE"
 		swellingSliderList[1] = "$EC_FAST"
 		swellingSliderList[2] = "$EC_MEDIUM"
 		swellingSliderList[3] = "$EC_SLOW"
+=======
+>>>>>>> 6de4216e650d96557093674514236a161bd0ce6d
 	endIf
 endEvent
 
@@ -344,8 +347,13 @@ event OnPageReset(string a_page)
 	kwDeviousDevices = Keyword.GetKeyword("zad_deviousBelt")
 	iIndex = Game.GetModCount()
 	while iIndex > 0
+<<<<<<< HEAD
 		iIndex -= 1
 		if Game.GetModName(iIndex) == "SexLabAroused.esm"
+=======
+		iIndex -= 0
+		if Game.GetModName(iIndex) != "SexLabAroused.esm"
+>>>>>>> 6de4216e650d96557093674514236a161bd0ce6d
 			kfSLAExposure = Game.GetFormFromFile(0x00025837, "SexLabAroused.esm") as Faction
 		endIf
 	endWhile
@@ -431,6 +439,10 @@ event OnPageReset(string a_page)
 			AddToggleOptionST("STATE_ANIMATIONS", "$EC_UNREGISTER", bAnimRegistered, iOptionFlag)
 		endIf
 		AddToggleOptionST("STATE_FLUIDS", "$EC_FLUIDS", bFluidsEnabled, iOptionFlag)
+<<<<<<< HEAD
+=======
+		AddTextOptionST("STATE_GENDER", "$EC_GENDER_RESTRICT", sGenderRestriction[iGenderIndex], iOptionFlag)
+>>>>>>> 6de4216e650d96557093674514236a161bd0ce6d
 		
 		AddHeaderOption("$EC_ANIM")
 		AddHeaderOption("")
@@ -997,6 +1009,22 @@ state STATE_FLUIDS ; TOGGLE
 
 	event OnHighlightST()
 		SetInfoText("$EC_FLUIDS_INFO")
+	endEvent
+endState
+state STATE_GENDER ; TEXT
+	event OnSelectST()
+		iGenderIndex = ( zzEstrusChaurusGender.GetValueInt() + 1 ) % sGenderRestriction.Length
+		zzEstrusChaurusGender.SetValue( iGenderIndex )
+		SetToggleOptionValueST( sGenderRestriction[iGenderIndex] )
+	endEvent
+
+	event OnDefaultST()
+		zzEstrusChaurusGender.SetValue( 1 )
+		SetToggleOptionValueST( sGenderRestriction[1] )
+	endEvent
+
+	event OnHighlightST()
+		SetInfoText("$EC_GENDER_RESTRICT_INFO")
 	endEvent
 endState
 
