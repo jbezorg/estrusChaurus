@@ -3,7 +3,7 @@ Scriptname zzEstrusChaurusMCMScript extends SKI_ConfigBase  Conditional
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 
 int function GetVersion()
-	return 3202
+	return 3330
 endFunction
 
 string function GetStringVer()
@@ -103,9 +103,9 @@ event OnConfigInit()
 
 	swellingSliderList = new string[4]
 	swellingSliderList[0] = "$EC_NONE"
-	swellingSliderList[1] = "$EC_LARGE"
+	swellingSliderList[1] = "$EC_FAST"
 	swellingSliderList[2] = "$EC_MEDIUM"
-	swellingSliderList[3] = "$EC_SMALL"
+	swellingSliderList[3] = "$EC_SLOW"
 
 	Pages = New String[7]
 	Pages[0] = "$EC_PAGE_0"
@@ -125,6 +125,11 @@ event OnConfigInit()
 	bTentacleAnims[0] = false
 	bTentacleAnims[1] = false
 	bTentacleAnims[2] = false
+	
+	sGenderRestriction = New String[3]
+	sGenderRestriction[0] = "$EC_BOTH"
+	sGenderRestriction[1] = "$EC_MALE"
+	sGenderRestriction[2] = "$EC_FEMALE"
 
 	registerMenus()
 endEvent
@@ -230,6 +235,21 @@ event OnVersionUpdate(int a_version)
 		zzEstrusChaurusResidual      = Game.GetFormFromFile(0x00010a7a, "EstrusChaurus.esp") as GlobalVariable
 		zzEstrusChaurusResidualScale = Game.GetFormFromFile(0x0003da79, "EstrusChaurus.esp") as GlobalVariable
 	endIf
+
+	if (a_version >= 3330 && CurrentVersion < 3330)
+		zzEstrusChaurusGender        = Game.GetFormFromFile(0x0003f002, "EstrusChaurus.esp") as GlobalVariable
+
+		sGenderRestriction = New String[3]
+		sGenderRestriction[0] = "$EC_MALE"
+		sGenderRestriction[1] = "$EC_FEMALE"
+		sGenderRestriction[2] = "$EC_BOTH"
+		
+		swellingSliderList = new string[4]
+		swellingSliderList[0] = "$EC_NONE"
+		swellingSliderList[1] = "$EC_FAST"
+		swellingSliderList[2] = "$EC_MEDIUM"
+		swellingSliderList[3] = "$EC_SLOW"
+	endIf
 endEvent
 
 ; MENUS -------------------------------------------------------------------------------------------
@@ -270,6 +290,7 @@ event OnPageReset(string a_page)
 
 	bAnimRegistered       = bTentacleAnims.Find(false) == -1
 	bFluidsEnabled        = zzEstrusChaurusFluids.GetValue() as bool
+	iGenderIndex          = zzEstrusChaurusGender.GetValueInt()
 
 ; NODE TESTS --------------------------------------------------------------------------------------
 	bEnableResidualBreast = zzEstrusChaurusResidual.GetValue() as bool
@@ -302,7 +323,7 @@ event OnPageReset(string a_page)
 ; UNINSTALL ---------------------------------------------------------------------------------------
 	bUninstallState    = zzEstrusChaurusUninstall.GetValueInt() as bool
 ; ADDSTRIP ----------------------------------------------------------------------------------------
-	bAddStrip          = zzEstrusChaurusAddStrip.GetValueInt() as bool
+	bAddStrip          = zzEstrusChaurusAddStrip.GetValueInt() as bool ;depreciated
 ; PREGNANCY ---------------------------------------------------------------------------------------
 	bPregnancyEnabled  = !zzEstrusDisablePregnancy.GetValueInt() as bool
 ; GROWTH ------------------------------------------------------------------------------------------
@@ -320,9 +341,15 @@ event OnPageReset(string a_page)
 	endIf
 	
 ; MODS & DLC --------------------------------------------------------------------------------------
-	kwDeviousDevices   = Keyword.GetKeyword("zad_deviousBelt")
-	kfSLAExposure      = Game.GetFormFromFile(0x00025837, "SexLabAroused.esm") as Faction
-
+	kwDeviousDevices = Keyword.GetKeyword("zad_deviousBelt")
+	iIndex = Game.GetModCount()
+	while iIndex > 0
+		iIndex -= 1
+		if Game.GetModName(iIndex) == "SexLabAroused.esm"
+			kfSLAExposure = Game.GetFormFromFile(0x00025837, "SexLabAroused.esm") as Faction
+		endIf
+	endWhile
+	
 ; -------------------------------------------------------------------------------------------------
 	if ( a_page == Pages[0] )
 		SetCursorFillMode(TOP_TO_BOTTOM)
@@ -364,6 +391,7 @@ event OnPageReset(string a_page)
 ; ACTOR EVENTS ------------------------------------------------------------------------------------
 		AddHeaderOption("$EC_ACTOREVENTS")
 		AddTextOptionST("STATE_ACTOREVENTS", "$EC_REGISTER", bAERegistered as String, iOptionFlag)
+		AddTextOptionST("STATE_GENDER", "$EC_GENDER_RESTRICT", sGenderRestriction[iGenderIndex], iOptionFlag)
 ; PREGNANCY ---------------------------------------------------------------------------------------
 		AddHeaderOption("$EC_PREGNANCY_TITLE")
 		AddToggleOptionST("STATE_PREGNANCY", "$EC_PREGNANCY", bPregnancyEnabled, iOptionFlag)
@@ -403,7 +431,7 @@ event OnPageReset(string a_page)
 			AddToggleOptionST("STATE_ANIMATIONS", "$EC_UNREGISTER", bAnimRegistered, iOptionFlag)
 		endIf
 		AddToggleOptionST("STATE_FLUIDS", "$EC_FLUIDS", bFluidsEnabled, iOptionFlag)
-
+		
 		AddHeaderOption("$EC_ANIM")
 		AddHeaderOption("")
 		iIndex = sTentacleAnims.length
@@ -911,6 +939,22 @@ state STATE_ACTOREVENTS ; TEXT
 		SetInfoText("$EC_ACTOREVENTS_INFO")
 	endEvent
 endState
+state STATE_GENDER ; TEXT
+	event OnSelectST()
+		iGenderIndex = ( zzEstrusChaurusGender.GetValueInt() + 1 ) % sGenderRestriction.Length
+		zzEstrusChaurusGender.SetValue( iGenderIndex )
+		SetTextOptionValueST( sGenderRestriction[iGenderIndex] )
+	endEvent
+
+	event OnDefaultST()
+		zzEstrusChaurusGender.SetValue( 1 )
+		SetTextOptionValueST( sGenderRestriction[1] )
+	endEvent
+
+	event OnHighlightST()
+		SetInfoText("$EC_GENDER_RESTRICT_INFO")
+	endEvent
+endState
 
 ; ANIMATIONS --------------------------------------------------------------------------------------
 state STATE_ANIMATIONS ; TEXT
@@ -1067,6 +1111,8 @@ GlobalVariable      Property zzEstrusChaurusMaxButtScale  Auto
 GlobalVariable      Property zzEstrusChaurusResidual      Auto
 GlobalVariable      Property zzEstrusChaurusResidualScale Auto
 
+; VERSION 3330
+GlobalVariable      Property zzEstrusChaurusGender        Auto
 
 ; PRIVATE VARIABLES -------------------------------------------------------------------------------
 ; VERSION 1
@@ -1136,3 +1182,7 @@ Bool bEnableRightBreast01  = False
 
 ; VERSION 3201
 Bool bEnableResidualBreast = False
+
+; VERSION 3330
+String[] sGenderRestriction
+Int iGenderIndex           = 1   
