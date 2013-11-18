@@ -84,7 +84,7 @@ endFunction
 ; This functions exactly as and has the same purpose as the SkyUI function
 ; GetVersion(). It returns the static version of the AE script.
 int function aeGetVersion()
-	return 8
+	return 9
 endFunction
 
 function aeUpdate( int aiVersion )
@@ -178,9 +178,10 @@ endFunction
 ; On a EC Health Event
 event OnECEvent(String asEventName, string asStat, float afStatValue, Form akSender)
 	Debug.TraceConditional("EC::OnECEvent: " + asEventName, ae.VERBOSE)
-	Actor kSender = akSender as Actor
+	Actor kSender   = akSender as Actor
+	Bool  bGenderOk = mcm.zzEstrusChaurusGender.GetValueInt() == 2 || kSender.GetLeveledActorBase().GetSex() == mcm.zzEstrusChaurusGender.GetValueInt()
 
-	if asEventName == myEvent + ae._START && asStat == ae.HEALTH && SexLab.ValidateActor(kSender) == 1
+	if bGenderOk && asEventName == myEvent + ae._START && asStat == ae.HEALTH && SexLab.ValidateActor(kSender) == 1
 		Int chaurusRape = 0
 		Actor kAttacker = ae.GetLastAttacker(kSender) as Actor
 		
@@ -227,7 +228,9 @@ event OnECEvent(String asEventName, string asStat, float afStatValue, Form akSen
 		RegisterForModEvent("AnimationEnd_estrusChaurus",   "estrusChaurusEnd")
 		RegisterForModEvent("StageEnd_estrusChaurus",       "estrusChaurusStage")
 
-		SexLab.StartSex(sexActors, animations, Victim=kSender, hook="estrusChaurus")
+		if SexLab.StartSex(sexActors, animations, Victim=kSender, hook="estrusChaurus") < 0
+			sexActors[0].DispelSpell(crChaurusParasite)
+		endIf
 		
 		if kSender == Game.GetPlayer()
 			SexLab.AdjustPlayerPurity(-5.0)
@@ -285,7 +288,7 @@ event estrusChaurusStage(string eventName, string argString, float argNum, form 
 		actorList[0].AddItem(zzEstrusChaurusFluid, 1, true)
 		actorList[0].EquipItem(zzEstrusChaurusFluid, true, true)
 	endIf
-	if cntParasite > 0 && stage == 8
+	if cntParasite > 0 && stage == 9
 		actorList[0].UnequipItem(zzEstrusChaurusParasite, false, true)
 		actorList[0].RemoveItem(zzEstrusChaurusParasite, cntParasite, true)
 	endIf

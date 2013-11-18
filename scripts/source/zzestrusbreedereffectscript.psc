@@ -1,5 +1,13 @@
 Scriptname zzEstrusBreederEffectScript extends activemagiceffect
 
+int function minInt(int iA, int iB)
+	if iA < iB
+		return iA
+	else
+		return iB
+	endIf
+endFunction
+
 Float function eggChain()
 	ObjectReference[] thisEgg = new ObjectReference[13]
 	bool bHasScrotNode        = NetImmerse.HasNode(kTarget, NINODE_GENSCROT, false)
@@ -147,14 +155,16 @@ function manageSexLabAroused(int aiModRank = -1)
 		return
 	endIf
 	
+	int iRank = kTarget.GetFactionRank(MCM.kfSLAExposure)
+	
 	if aiModRank == 0 || iOrigSLAExposureRank < -2
-		iOrigSLAExposureRank = kTarget.GetFactionRank(MCM.kfSLAExposure)
+		iOrigSLAExposureRank = iRank
 	endIf
 	if aiModRank < 0
 		kTarget.SetFactionRank(MCM.kfSLAExposure, iOrigSLAExposureRank)
 	endIf
-	if aiModRank > 0 && kTarget.GetFactionRank(MCM.kfSLAExposure) < 100
-		kTarget.ModFactionRank(MCM.kfSLAExposure, aiModRank)
+	if aiModRank > 0 && iRank < 100
+		kTarget.ModFactionRank(MCM.kfSLAExposure, minInt(aiModRank, 100 - aiModRank) )
 	endIf
 endFunction
 
