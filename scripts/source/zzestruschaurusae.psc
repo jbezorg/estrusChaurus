@@ -229,6 +229,7 @@ event OnECEvent(String asEventName, string asStat, float afStatValue, Form akSen
 		RegisterForModEvent("StageEnd_estrusChaurus",       "estrusChaurusStage")
 
 		if SexLab.StartSex(sexActors, animations, Victim=kSender, hook="estrusChaurus") < 0
+			kSender.SetGhost(False)
 			sexActors[0].DispelSpell(crChaurusParasite)
 		endIf
 		

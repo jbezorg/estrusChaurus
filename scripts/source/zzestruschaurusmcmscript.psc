@@ -3,7 +3,7 @@ Scriptname zzEstrusChaurusMCMScript extends SKI_ConfigBase  Conditional
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 
 int function GetVersion()
-	return 3330
+	return 3340
 endFunction
 
 string function GetStringVer()
