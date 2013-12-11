@@ -1,32 +1,36 @@
 Scriptname zzEstrusChaurusAE extends _ae_mod_base  
 
 ; VERSION 1
-sslSystemConfig           property SexLabMCM                      auto
-SexLabFramework           property SexLab                         auto
-Faction                   property chaurus                        auto
-Faction                   property SexLabAnimating                auto
-Spell                     property crChaurusParasite              auto 
-MagicEffect[]             property crChaurusPoison                auto 
-Armor                     property zzEstrusChaurusParasite        auto  
-Armor                     property zzEstrusChaurusFluid           auto  
-GlobalVariable            property zzEstrusChaurusFluids          auto  
+sslSystemConfig           property SexLabMCM                        auto
+SexLabFramework           property SexLab                           auto
+Faction                   property chaurus                          auto
+Faction                   property SexLabAnimating                  auto
+Spell                     property crChaurusParasite                auto 
+MagicEffect[]             property crChaurusPoison                  auto 
+Armor                     property zzEstrusChaurusParasite          auto  
+Armor                     property zzEstrusChaurusFluid             auto  
+GlobalVariable            property zzEstrusChaurusFluids            auto  
 
 ; VERSION 2
-Spell                     property zzEstrusChaurusBreederAbility  auto
-Faction                   property zzEstrusChaurusBreederFaction  auto
+Spell                     property zzEstrusChaurusBreederAbility    auto
+Faction                   property zzEstrusChaurusBreederFaction    auto
 
 ; VERSION 3
-Faction                   property CurrentFollowerFaction         auto
-Keyword                   property ActorTypeNPC                   auto
+Faction                   property CurrentFollowerFaction           auto
+Keyword                   property ActorTypeNPC                     auto
 
 ; VERSION 5
-zzEstrusChaurusMCMScript  property mcm                            auto 
+zzEstrusChaurusMCMScript  property mcm                              auto 
 
 ; VERSION 6
-Faction                   property CurrentHireling                auto
+Faction                   property CurrentHireling                  auto
 
 ; VERSION 8
-Armor                     property zzEstrusChaurusDwemerBinders   auto
+Armor                     property zzEstrusChaurusDwemerBinders     auto
+
+
+; VERSION 11
+Faction                   property zzEstrusChaurusExclusionFaction  auto
 
 ; VERSION 1
 Actor[]            sexActors
@@ -39,7 +43,7 @@ sslBaseAnimation[] animations
 ;
 ; If it is not defined in your mod then your mod events will not be triggered.
 Bool function qualifyActor(Actor akActor = none, String asStat = "")
-	if !akActor || akActor.IsDead() || akActor.IsDisabled()
+	if !akActor || akActor.IsDead() || akActor.IsDisabled() || akActor.IsInFaction(zzEstrusChaurusExclusionFaction)
 		return false
 	endIf
 
@@ -84,7 +88,7 @@ endFunction
 ; This functions exactly as and has the same purpose as the SkyUI function
 ; GetVersion(). It returns the static version of the AE script.
 int function aeGetVersion()
-	return 9
+	return 11
 endFunction
 
 function aeUpdate( int aiVersion )
@@ -120,8 +124,11 @@ function aeUpdate( int aiVersion )
 
 		myActorsList[0] = Game.GetPlayer()
 	endIf
-	if (myVersion >= 8 && aiVersion < 8)
+	if (myVersion >= 10 && aiVersion < 10)
 		zzEstrusChaurusDwemerBinders = Game.GetFormFromFile(0x00039e74, "EstrusChaurus.esp") as Armor
+	endIf
+	if (myVersion >= 11 && aiVersion < 11)
+		zzEstrusChaurusExclusionFaction = Game.GetFormFromFile(0x0004058b, "EstrusChaurus.esp") as Faction
 	endIf
 endFunction
 ; END AE VERSIONING ===========================================================
@@ -139,21 +146,23 @@ int function AddCompanions()
 	Cell  thisCell  = myActorsList[0].GetParentCell()
 	Int   idxNPC    = thisCell.GetNumRefs(43)
 	
+	Bool  check1    = false
+	Bool  check2    = false
+	Bool  check3    = false
+	
 	Debug.Notification("$EC_COMPANIONS_CHECK")
 	
 	while idxNPC > 0 && thisCount < 19
 		idxNPC -= 1
 		thisActor = thisCell.GetNthRef(idxNPC,43) as Actor
-
-		if thisActor && \
-		   !thisActor.IsDead() && \
-		   !thisActor.IsDisabled() && \
-		   myActorsList.Find(thisActor) < 0 && \
-		   thisActor.HasKeyword(ActorTypeNPC) && \
-		   ( thisActor.GetFactionRank(CurrentHireling) >= 0 || thisActor.GetFactionRank(CurrentFollowerFaction) >= 0 || thisActor.IsPlayerTeammate() )
 		
+		check1 = thisActor && !thisActor.IsDead() && !thisActor.IsDisabled()
+		check2 = check1 && myActorsList.Find(thisActor) < 0 && thisActor.HasKeyword(ActorTypeNPC)
+		check3 = check2 && ( thisActor.GetFactionRank(CurrentHireling) >= 0 || thisActor.GetFactionRank(CurrentFollowerFaction) >= 0 || thisActor.IsPlayerTeammate() )
+
+		if check3
 			thisCount += 1
-			myActorsList[thisCount] = thisActor as Actor
+			myActorsList[thisCount] = thisActor
 			Debug.TraceConditional("EC::AddCompanions: " + thisActor.GetLeveledActorBase().GetName() + "@"+thisCount, ae.VERBOSE)
 		else
 			Debug.TraceConditional("EC::AddCompanions: " + thisActor.GetLeveledActorBase().GetName() + ":false", ae.VERBOSE)

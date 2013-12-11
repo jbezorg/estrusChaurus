@@ -1,9 +1,8 @@
 Scriptname zzEstrusChaurusMCMScript extends SKI_ConfigBase  Conditional
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
-
 int function GetVersion()
-	return 3340
+	return 3352
 endFunction
 
 string function GetStringVer()
@@ -134,6 +133,10 @@ event OnConfigInit()
 	registerMenus()
 endEvent
 
+event OnInit()
+	OnConfigInit()
+endEvent
+
 ; @implements SKI_QuestBase
 event OnVersionUpdate(int a_version)
 	if (a_version >= 5 && CurrentVersion < 5)
@@ -249,6 +252,10 @@ event OnVersionUpdate(int a_version)
 		swellingSliderList[1] = "$EC_FAST"
 		swellingSliderList[2] = "$EC_MEDIUM"
 		swellingSliderList[3] = "$EC_SLOW"
+	endIf
+
+	if (a_version >= 3350 && CurrentVersion < 3350)
+		zzEstrusChaurusGender        = Game.GetFormFromFile(0x0003f002, "EstrusChaurus.esp") as GlobalVariable
 	endIf
 endEvent
 
@@ -470,10 +477,16 @@ event OnPageReset(string a_page)
 		AddHeaderOption("")
 		while ( iIndex < kHatchingEgg.Length )
 			if ( kHatchingEgg[iIndex] != None )
-				thisName = kHatchingEgg[iIndex].GetCurrentLocation().GetName()
 				thisTime = decimalDaysToString(fHatchingDue[iIndex] - Utility.GetCurrentGameTime())
-				AddTextOption(thisName, thisTime, iOptionFlag)
+				if thisTime > 0.0
+					thisName = kHatchingEgg[iIndex].GetCurrentLocation().GetName()
+					AddTextOption(thisName, thisTime, iOptionFlag)
+				else
+					( kHatchingEgg[iIndex] as zzChaurusEggsScript ).hatch()
+				endIf
 				iCount += 1
+			elseIf fHatchingDue[iIndex] != 0.0
+				fHatchingDue[iIndex] = 0.0
 			endIf
 			iIndex += 1
 		endWhile
@@ -1039,7 +1052,6 @@ state STATE_DLCMOD_1 ; TEXT
 		SetInfoText("$EC_DLCMOD_1_INFO")
 	endEvent
 endState
-
 
 ; PUBLIC VARIABLES --------------------------------------------------------------------------------
 ; VERSION 0

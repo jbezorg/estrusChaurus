@@ -46,12 +46,18 @@ function oviposition()
 	endWhile
 	if ( zzEstrusChaurusUninstall.GetValueInt() == 1 )
 		GoToState("AFTERMATH")
+		return
 	endIf
 	
 	fReduction       = eggChain()
 	fBreastReduction = fReduction / 2.0
 	fButtReduction   = fReduction / 2.0
 	
+	iAnimationIndex += 1
+	Debug.SendAnimationEvent(kTarget, "Arrok_Missionary_A1_S"+iAnimationIndex)
+	iAnimationIndex = iAnimationIndex % 4
+	
+	; BELLY SWELL =====================================================
 	if ( bBellyEnabled )
 		fPregBelly = fPregBelly - fReduction
 
@@ -91,6 +97,7 @@ function oviposition()
 	endif
 
 	
+	; BREAST SWELL ====================================================
 	if ( bBreastEnabled )
 		fPregLeftBreast    = fPregLeftBreast - fBreastReduction
 		fPregRightBreast   = fPregRightBreast - fBreastReduction
@@ -440,7 +447,9 @@ state BIRTHING
 		
 		Debug.SendAnimationEvent(kTarget, "IdleBedRollFrontEnterStart")
 		Utility.Wait( 10.0 )
-		Debug.SendAnimationEvent(kTarget, "zzEstrusCommon01Up")
+		iAnimationIndex += 1
+		Debug.SendAnimationEvent(kTarget, "Arrok_Missionary_A1_S"+iAnimationIndex)
+		;Debug.SendAnimationEvent(kTarget, "zzEstrusCommon01Up")
 
 		;iBirthingLoops = Utility.RandomInt( 6, 10 )
 		if bIsFemale && MCM.zzEstrusChaurusFluids.GetValue() as bool
@@ -553,6 +562,8 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 		if iIncubationIdx != -1
 			MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
 			MCM.kIncubationDue[iIncubationIdx] = kTarget
+			
+			(EC.GetAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
 		else
 			kTarget.RemoveSpell(zzEstrusChaurusBreederAbility)
 			return
@@ -611,6 +622,7 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 	if iIncubationIdx != -1
 		MCM.fIncubationDue[iIncubationIdx] = 0.0
 		MCM.kIncubationDue[iIncubationIdx] = None
+		(EC.GetAlias(iIncubationIdx) as ReferenceAlias).Clear()
 	endIf
 
 	if ( kTarget.IsInFaction(zzEstrusChaurusBreederFaction) )
@@ -726,10 +738,12 @@ Int iIncubationIdx       = -1
 Int iBirthingLoops       = 6
 ; SexLab Aroused
 Int iOrigSLAExposureRank = -3
+Int iAnimationIndex      = 1
 
 String[] sSwellingMsgs
 
-zzEstrusChaurusMCMScript Property MCM Auto
+Quest				     Property EC                             Auto
+zzEstrusChaurusMCMScript Property MCM                            Auto
 
 Armor                    Property zzEstrusChaurusFluid           Auto
 Armor                    Property zzEstrusChaurusMilkR           Auto
