@@ -231,14 +231,11 @@ event OnECEvent(String asEventName, string asStat, float afStatValue, Form akSen
 			crChaurusParasite.RemoteCast(kSender, kSender, kSender)
 		endIf
 
-		kSender.SetGhost()
-	
 		RegisterForModEvent("AnimationStart_estrusChaurus", "estrusChaurusStart")
 		RegisterForModEvent("AnimationEnd_estrusChaurus",   "estrusChaurusEnd")
 		RegisterForModEvent("StageEnd_estrusChaurus",       "estrusChaurusStage")
 
 		if SexLab.StartSex(sexActors, animations, Victim=kSender, hook="estrusChaurus") < 0
-			kSender.SetGhost(False)
 			sexActors[0].DispelSpell(crChaurusParasite)
 		endIf
 		
@@ -280,7 +277,6 @@ event estrusChaurusEnd(string eventName, string argString, float argNum, form se
 
 	actorList[0].SendModEvent(publicModEvents[0])
 	actorList[0].DispelSpell(crChaurusParasite)
-	actorList[0].SetGhost(False)
 endEvent
 
 event estrusChaurusStage(string eventName, string argString, float argNum, form sender)
