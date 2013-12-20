@@ -54,7 +54,7 @@ function oviposition()
 	fButtReduction   = fReduction / 2.0
 	
 	iAnimationIndex += 1
-	Debug.SendAnimationEvent(kTarget, "Arrok_Missionary_A1_S"+iAnimationIndex)
+	Debug.SendAnimationEvent(kTarget, "Missionary_A1_S"+iAnimationIndex)
 	iAnimationIndex = iAnimationIndex % 4
 	
 	; BELLY SWELL =====================================================
@@ -148,10 +148,11 @@ function oviposition()
 
 	Utility.Wait( Utility.RandomFloat( fOviparityTime, fOviparityTime * 2.0 ) )
 
-	if ( !finished && iBirthingLoops )
+	if ( !finished && iBirthingLoops > 0 )
 		oviposition()
 		iBirthingLoops -= 1
 	Else
+		finished = true
 		Debug.Trace("_EC_::GTS::AFTERMATH")
 		GoToState("AFTERMATH")
 	endif
@@ -563,7 +564,7 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 			MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
 			MCM.kIncubationDue[iIncubationIdx] = kTarget
 			
-			(EC.GetAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
+			(EC.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
 		else
 			kTarget.RemoveSpell(zzEstrusChaurusBreederAbility)
 			return
@@ -619,7 +620,7 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 	zzEstrusChaurusInfected.Mod( -1.0 )
 	bUninstall = zzEstrusChaurusUninstall.GetValueInt() as Bool
 
-	if iIncubationIdx != -1
+	if iIncubationIdx > 0
 		MCM.fIncubationDue[iIncubationIdx] = 0.0
 		MCM.kIncubationDue[iIncubationIdx] = None
 		(EC.GetAlias(iIncubationIdx) as ReferenceAlias).Clear()
