@@ -12,7 +12,9 @@ Float function eggChain()
 	ObjectReference[] thisEgg = new ObjectReference[13]
 	bool bHasScrotNode        = NetImmerse.HasNode(kTarget, NINODE_GENSCROT, false)
 
-	Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
+	MCM.SexLab.PickVoice(kTarget).Moan(kTarget, 50)
+	kTarget.SetExpressionOverride(12, 100)
+
 	Int idx = 0
 	Int len = Utility.RandomInt( 5, 9 )
 	while idx < len
@@ -30,6 +32,8 @@ Float function eggChain()
 		idx += 1
 		Utility.Wait( Utility.RandomFloat( 3.5, 6.5 ) )
 	endWhile
+	
+	kTarget.ClearExpressionOverride()
 
 	return len / 7
 endFunction
@@ -158,22 +162,18 @@ function oviposition()
 	endif
 endFunction
 
-function manageSexLabAroused(int aiModRank = -1)
+int function manageSexLabAroused(int aiModRank = -1)
 	if !MCM.kfSLAExposure
-		return
+		return 0
 	endIf
 	
 	int iRank = kTarget.GetFactionRank(MCM.kfSLAExposure)
 	
-	if aiModRank == 0 || iOrigSLAExposureRank < -2
-		iOrigSLAExposureRank = iRank
-	endIf
-	if aiModRank < 0
-		kTarget.SetFactionRank(MCM.kfSLAExposure, iOrigSLAExposureRank)
-	endIf
-	if aiModRank > 0 && iRank < 100
+	if iRank > 0 && iRank < 100
 		kTarget.ModFactionRank(MCM.kfSLAExposure, minInt(aiModRank, 100 - aiModRank) )
 	endIf
+	
+	return kTarget.GetFactionRank(MCM.kfSLAExposure)
 endFunction
 
 function triggerNodeUpdate(bool abwait = false)
@@ -252,7 +252,11 @@ state INCUBATION_NODE
 			fButtSwell      = 0.0
 			
 			; SexLab Aroused ==================================================
-			manageSexLabAroused(1)
+			int iArrousal = manageSexLabAroused(1)
+			if bExpressionSet
+				bExpressionSet = false
+				kTarget.ClearExpressionOverride()
+			endIf
 			
 			; BREAST SWELL ====================================================
 			iBreastSwellGlobal = zzEstrusSwellingBreasts.GetValueInt()
@@ -268,7 +272,9 @@ state INCUBATION_NODE
 				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
 					fInfectionLastMsg = fGameTime + Utility.RandomFloat(0.0417, 0.25)
 					Debug.Notification(sSwellingMsgs[Utility.RandomInt(0, sSwellingMsgs.Length - 1)])
-					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
+					MCM.SexLab.PickVoice(kTarget).Moan(kTarget, iArrousal)
+					kTarget.SetExpressionOverride(12, iArrousal)
+					bExpressionSet = true
 				endif
 
 				if ( fPregLeftBreast > NINODE_MAX_SCALE )
@@ -340,7 +346,9 @@ state INCUBATION_NODE
 
 				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
 					fInfectionLastMsg = fGameTime + Utility.RandomFloat(0.0417, 0.25)
-					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
+					MCM.SexLab.PickVoice(kTarget).Moan(kTarget, iArrousal)
+					kTarget.SetExpressionOverride(12, iArrousal)
+					bExpressionSet = true
 				endif
 
 				if ( fPregBelly > NINODE_MAX_SCALE * 2.0 )
@@ -373,7 +381,9 @@ state INCUBATION_NODE
 
 				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
 					fInfectionLastMsg = fGameTime + Utility.RandomFloat(0.0417, 0.25)
-					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
+					MCM.SexLab.PickVoice(kTarget).Moan(kTarget, iArrousal)
+					kTarget.SetExpressionOverride(12, iArrousal)
+					bExpressionSet = true
 				endif
 
 				if ( fPregLeftButt > NINODE_MAX_SCALE )
@@ -428,7 +438,7 @@ state INCUBATION
 		; catch a state change caused by RegisterForSingleUpdate
 		if ( GetState() == "INCUBATION" )
 			; SexLab Aroused ==================================================
-			manageSexLabAroused(1)
+			int iArrousal = manageSexLabAroused(1)
 
 			RegisterForSingleUpdate( fUpdateTime )
 		endif
@@ -571,9 +581,6 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 		endif
 	endif
 
-	; SexLab Aroused
-	manageSexLabAroused(0)
-
 	if ( !bDisableNodeChange )
 		; make sure we have loaded 3d to access
 		while ( !kTarget.Is3DLoaded() )
@@ -625,6 +632,8 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 		MCM.kIncubationDue[iIncubationIdx] = None
 		(EC.GetAlias(iIncubationIdx) as ReferenceAlias).Clear()
 	endIf
+	
+	kTarget.ClearExpressionOverride()
 
 	if ( kTarget.IsInFaction(zzEstrusChaurusBreederFaction) )
 		kTarget.RemoveFromFaction(zzEstrusChaurusBreederFaction)
@@ -638,9 +647,6 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 		endif
 	endIf
 	
-	; SexLab Aroused
-	manageSexLabAroused()
-
 	if ( !bDisableNodeChange )
 		; make sure we have loaded 3d to access
 		while ( !kTarget.Is3DLoaded() || kTarget.IsOnMount() || Utility.IsInMenuMode() )
@@ -740,6 +746,7 @@ Int iBirthingLoops       = 6
 ; SexLab Aroused
 Int iOrigSLAExposureRank = -3
 Int iAnimationIndex      = 1
+Bool bExpressionSet      = false
 
 String[] sSwellingMsgs
 

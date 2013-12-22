@@ -2,7 +2,7 @@ Scriptname zzEstrusChaurusMCMScript extends SKI_ConfigBase  Conditional
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 3353
+	return 3354
 endFunction
 
 string function GetStringVer()
@@ -538,15 +538,15 @@ event OnPageReset(string a_page)
 ; VERSION CHECK -----------------------------------------------------------------------------------
 	elseIf ( a_page == Pages[6] )
 		AddHeaderOption("Estrus Chaurus v" + GetStringVer())
-		AddToggleOption("$EC_VERSION_OK", (GetVersion() >= 3000), OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_VERSION_OK", (GetVersion() >= 3354), OPTION_FLAG_DISABLED)
 		AddHeaderOption("SKSE v" + skseVersionString() )
 		AddToggleOption("$EC_VERSION_OK", (skseVersionCompare(1,6,16) >= 0), OPTION_FLAG_DISABLED)
 		AddHeaderOption("FNIS v" + FNIS.VersionToString())
-		AddToggleOption("$EC_VERSION_OK", (FNIS.VersionCompare(4,0,0) >= 0), OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_VERSION_OK", (FNIS.VersionCompare(4,1,0) >= 0), OPTION_FLAG_DISABLED)
 		AddHeaderOption("FNIS Creature v" + FNIS.VersionToString(true))
-		AddToggleOption("$EC_VERSION_OK", (FNIS.VersionCompare(4,0,0,true) >= 0), OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_VERSION_OK", (FNIS.VersionCompare(4,1,0,true) >= 0), OPTION_FLAG_DISABLED)
 		AddHeaderOption("SexLab v" + sexlabmcm.GetStringVer())
-		AddToggleOption("$EC_VERSION_OK", (sexlabmcm.GetVersion() >= 1200), OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_VERSION_OK", (sexlabmcm.GetVersion() >= 1310), OPTION_FLAG_DISABLED)
 		AddHeaderOption("Actor Events v" + aemcm.GetStringVer())
 		AddToggleOption("$EC_VERSION_OK", (aemcm.GetVersion() >= 2200), OPTION_FLAG_DISABLED)
 	endIf
@@ -1125,6 +1125,7 @@ GlobalVariable      Property zzEstrusChaurusResidualScale Auto
 
 ; VERSION 3330
 GlobalVariable      Property zzEstrusChaurusGender        Auto
+
 
 ; PRIVATE VARIABLES -------------------------------------------------------------------------------
 ; VERSION 1
