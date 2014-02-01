@@ -2,7 +2,7 @@ Scriptname zzEstrusChaurusMCMScript extends SKI_ConfigBase  Conditional
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 3354
+	return 3355
 endFunction
 
 string function GetStringVer()
@@ -48,6 +48,8 @@ endFunction
 
 ; VERSION 3001
 function registerMenus()
+	kwDeviousDevices = Keyword.GetKeyword("zad_deviousBelt")
+
 	RegisterForMenu(TRIGGER_MENU)
 
 

@@ -153,6 +153,7 @@ function oviposition()
 	Utility.Wait( Utility.RandomFloat( fOviparityTime, fOviparityTime * 2.0 ) )
 
 	if ( !finished && iBirthingLoops > 0 )
+		Debug.Trace("_EC_::GTS::oviposition loop " + iBirthingLoops)
 		oviposition()
 		iBirthingLoops -= 1
 	Else
@@ -462,7 +463,7 @@ state BIRTHING
 		Debug.SendAnimationEvent(kTarget, "Arrok_Missionary_A1_S"+iAnimationIndex)
 		;Debug.SendAnimationEvent(kTarget, "zzEstrusCommon01Up")
 
-		;iBirthingLoops = Utility.RandomInt( 6, 10 )
+		iBirthingLoops = Utility.RandomInt( 6, 8 )
 		if bIsFemale && MCM.zzEstrusChaurusFluids.GetValue() as bool
 			kTarget.AddItem(zzEstrusChaurusFluid, 1, true)
 			kTarget.EquipItem(zzEstrusChaurusFluid, true, true)
@@ -534,91 +535,97 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	kCaster            = akCaster
 	kPlayer            = Game.GetPlayer()
 	bDisableNodeChange = zzEstrusDisableNodeResize.GetValue() as Bool
+	bWearingBelt       = kTarget.WornHasKeyword( MCM.kwDeviousDevices )
 	
-	sSwellingMsgs      = new String[3]
-	sSwellingMsgs[0]   = "$EC_SWELLING_1_3RD"
-	sSwellingMsgs[1]   = "$EC_SWELLING_2_3RD"
-	sSwellingMsgs[2]   = "$EC_SWELLING_3_3RD"
+	if !bWearingBelt
+		sSwellingMsgs      = new String[3]
+		sSwellingMsgs[0]   = "$EC_SWELLING_1_3RD"
+		sSwellingMsgs[1]   = "$EC_SWELLING_2_3RD"
+		sSwellingMsgs[2]   = "$EC_SWELLING_3_3RD"
+		
+		
+		GoToState("IMPREGNATE")
+		zzEstrusChaurusInfected.Mod( 1.0 )
+		kTarget.StopCombatAlarm()
 
-	GoToState("IMPREGNATE")
-	zzEstrusChaurusInfected.Mod( 1.0 )
-	kTarget.StopCombatAlarm()
+		Float fMinTime     = zzEstrusIncubationPeriod.GetValue() * fIncubationTimeMin
+		Float fMaxTime     = zzEstrusIncubationPeriod.GetValue() * fIncubationTimeMax
+		fIncubationTime    = Utility.RandomFloat( fMinTime, fMaxTime )
+		fInfectionStart    = Utility.GetCurrentGameTime()
+		fthisIncubation    = fInfectionStart + ( fIncubationTime / 24.0 )
+		bEnableSkirt02     = NetImmerse.HasNode(kTarget, NINODE_SKIRT02, false)
+		bEnableSkirt03     = NetImmerse.HasNode(kTarget, NINODE_SKIRT03, false)
+		bIsFemale          = kTarget.GetLeveledActorBase().GetSex() == 1
+		bTorpedoFixEnabled = zzEstrusChaurusTorpedoFix.GetValueInt() as Bool
 
-	Float fMinTime     = zzEstrusIncubationPeriod.GetValue() * fIncubationTimeMin
-	Float fMaxTime     = zzEstrusIncubationPeriod.GetValue() * fIncubationTimeMax
-	fIncubationTime    = Utility.RandomFloat( fMinTime, fMaxTime )
-	fInfectionStart    = Utility.GetCurrentGameTime()
-	fthisIncubation    = fInfectionStart + ( fIncubationTime / 24.0 )
-	bEnableSkirt02     = NetImmerse.HasNode(kTarget, NINODE_SKIRT02, false)
-	bEnableSkirt03     = NetImmerse.HasNode(kTarget, NINODE_SKIRT03, false)
-	bIsFemale          = kTarget.GetLeveledActorBase().GetSex() == 1
-	bTorpedoFixEnabled = zzEstrusChaurusTorpedoFix.GetValueInt() as Bool
-
-	;kCaster.PathToReference(kTarget, 1.0)
-	
-	if ( !kTarget.IsInFaction(zzEstrusChaurusBreederFaction) )
-		kTarget.AddToFaction(zzEstrusChaurusBreederFaction)
-	endIf
-
-	if kTarget == kPlayer
-		iIncubationIdx = 0
-		MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
-		MCM.kIncubationDue[iIncubationIdx] = kTarget
-
-		if kPlayer.GetAnimationVariableInt("i1stPerson") as bool
-			Game.ForceThirdPerson()
+		;kCaster.PathToReference(kTarget, 1.0)
+		
+		if ( !kTarget.IsInFaction(zzEstrusChaurusBreederFaction) )
+			kTarget.AddToFaction(zzEstrusChaurusBreederFaction)
 		endIf
-	else
-		iIncubationIdx = MCM.kIncubationDue.Find(none, 1)
-		if iIncubationIdx != -1
+
+		if kTarget == kPlayer
+			iIncubationIdx = 0
 			MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
 			MCM.kIncubationDue[iIncubationIdx] = kTarget
-			
-			(EC.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
+
+			if kPlayer.GetAnimationVariableInt("i1stPerson") as bool
+				Game.ForceThirdPerson()
+			endIf
 		else
-			kTarget.RemoveSpell(zzEstrusChaurusBreederAbility)
-			return
-		endif
-	endif
-
-	if ( !bDisableNodeChange )
-		; make sure we have loaded 3d to access
-		while ( !kTarget.Is3DLoaded() )
-			Utility.Wait( 1.0 )
-		endWhile
-
-		bEnableLeftBreast  = NetImmerse.HasNode(kTarget, NINODE_LEFT_BREAST, false)
-		bEnableRightBreast = NetImmerse.HasNode(kTarget, NINODE_RIGHT_BREAST, false)
-		bEnableLeftButt    = NetImmerse.HasNode(kTarget, NINODE_LEFT_BUTT, false)
-		bEnableRightButt   = NetImmerse.HasNode(kTarget, NINODE_RIGHT_BUTT, false)
-		bEnableBelly       = NetImmerse.HasNode(kTarget, NINODE_BELLY, false)
-
-		bBreastEnabled     = ( bEnableLeftBreast && bEnableRightBreast && zzEstrusSwellingBreasts.GetValueInt() as bool )
-		bButtEnabled       = ( bEnableLeftButt && bEnableRightButt && zzEstrusSwellingButt.GetValueInt() as bool )
-		bBellyEnabled      = ( bEnableBelly && zzEstrusSwellingBelly.GetValueInt() as bool )
-
-		if ( bBreastEnabled && kTarget.GetLeveledActorBase().GetSex() == 1 )
-			fOrigLeftBreast  = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BREAST, false)
-			fOrigRightBreast = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BREAST, false)
-			if bTorpedoFixEnabled
-				fOrigLeftBreast01  = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BREAST01, false)
-				fOrigRightBreast01 = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BREAST01, false)
+			iIncubationIdx = MCM.kIncubationDue.Find(none, 1)
+			if iIncubationIdx != -1
+				MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
+				MCM.kIncubationDue[iIncubationIdx] = kTarget
+				
+				(EC.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
+			else
+				kTarget.RemoveSpell(zzEstrusChaurusBreederAbility)
+				return
 			endif
 		endif
-		if ( bButtEnabled )
-			fOrigLeftButt    = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BUTT, false)
-			fOrigRightButt   = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BUTT, false)
-		endif
-		if ( bBellyEnabled )
-			fOrigBelly       = NetImmerse.GetNodeScale(kTarget, NINODE_BELLY, false)
-		endif
-	endif
 
-	if bEnableSkirt02
-		RegisterForSingleUpdate( fUpdateTime )
-		RegisterForSingleUpdateGameTime( fIncubationTime )
-	Else
-		Debug.MessageBox("$EC_INCOMPATIBLE")
+		if ( !bDisableNodeChange )
+			; make sure we have loaded 3d to access
+			while ( !kTarget.Is3DLoaded() )
+				Utility.Wait( 1.0 )
+			endWhile
+
+			bEnableLeftBreast  = NetImmerse.HasNode(kTarget, NINODE_LEFT_BREAST, false)
+			bEnableRightBreast = NetImmerse.HasNode(kTarget, NINODE_RIGHT_BREAST, false)
+			bEnableLeftButt    = NetImmerse.HasNode(kTarget, NINODE_LEFT_BUTT, false)
+			bEnableRightButt   = NetImmerse.HasNode(kTarget, NINODE_RIGHT_BUTT, false)
+			bEnableBelly       = NetImmerse.HasNode(kTarget, NINODE_BELLY, false)
+
+			bBreastEnabled     = ( bEnableLeftBreast && bEnableRightBreast && zzEstrusSwellingBreasts.GetValueInt() as bool )
+			bButtEnabled       = ( bEnableLeftButt && bEnableRightButt && zzEstrusSwellingButt.GetValueInt() as bool )
+			bBellyEnabled      = ( bEnableBelly && zzEstrusSwellingBelly.GetValueInt() as bool )
+
+			if ( bBreastEnabled && kTarget.GetLeveledActorBase().GetSex() == 1 )
+				fOrigLeftBreast  = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BREAST, false)
+				fOrigRightBreast = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BREAST, false)
+				if bTorpedoFixEnabled
+					fOrigLeftBreast01  = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BREAST01, false)
+					fOrigRightBreast01 = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BREAST01, false)
+				endif
+			endif
+			if ( bButtEnabled )
+				fOrigLeftButt    = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BUTT, false)
+				fOrigRightButt   = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BUTT, false)
+			endif
+			if ( bBellyEnabled )
+				fOrigBelly       = NetImmerse.GetNodeScale(kTarget, NINODE_BELLY, false)
+			endif
+		endif
+
+		if bEnableSkirt02
+			RegisterForSingleUpdate( fUpdateTime )
+			RegisterForSingleUpdateGameTime( fIncubationTime )
+		else
+			Debug.MessageBox("$EC_INCOMPATIBLE")
+			kTarget.RemoveSpell(zzEstrusChaurusBreederAbility)
+		endif
+	else
 		kTarget.RemoveSpell(zzEstrusChaurusBreederAbility)
 	endif
 endEvent
@@ -647,7 +654,7 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 		endif
 	endIf
 	
-	if ( !bDisableNodeChange )
+	if ( !bDisableNodeChange && !bWearingBelt )
 		; make sure we have loaded 3d to access
 		while ( !kTarget.Is3DLoaded() || kTarget.IsOnMount() || Utility.IsInMenuMode() )
 			Utility.Wait( 1.0 )
@@ -747,6 +754,7 @@ Int iBirthingLoops       = 6
 Int iOrigSLAExposureRank = -3
 Int iAnimationIndex      = 1
 Bool bExpressionSet      = false
+Bool bWearingBelt        = false
 
 String[] sSwellingMsgs
 
